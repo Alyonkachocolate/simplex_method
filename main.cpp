@@ -16,6 +16,25 @@ void print_2(const std::vector<std::vector<double>> &A) {
               << '\n';
 }
 
+void print_simplex(const std::vector<std::vector<double>> &A, const std::vector<std::string> &sv, const std::vector<std::string> &basis) {
+    for (size_t i = 0; i < 50; i++) std::cout << "-";
+    std::cout << std::endl;
+    for (const auto &i : sv)
+        std::cout << std::right << std::setw(8) << i << " ";
+    std::cout << std::endl;
+    size_t k = 1;
+    for (const auto &i : A) {
+        std::cout << std::right << std::setw(8) << basis[k];
+        for (double j : i)
+            std::cout << std::right << std::setw(8) << std::setprecision(4) << j << " ";
+        std::cout << std::endl;
+        k++;
+    }
+    for (size_t i = 0; i < 50; i++) std::cout << "-";
+    std::cout << '\n'
+              << '\n';
+}
+
 // Вывод одномерного массива
 void print_1(const std::vector<double> &A) {
     for (size_t i = 0; i < 35; i++) std::cout << "-";
@@ -29,8 +48,8 @@ void print_1(const std::vector<double> &A) {
 }
 
 // Изначальное заполнение симплекс-таблицы
-void first_table(std::vector<std::vector<double>> &A, std::vector<double> &c, std::vector<double> &b, std::vector<std::vector<double>> &simplex) {
-    simplex.reserve(A.size());
+void first_table(std::vector<std::vector<double>> &A, std::vector<double> c, std::vector<double> &b, std::vector<std::vector<double>> &simplex, const std::vector<std::string> &sv, const std::vector<std::string> &basis) {
+    simplex.reserve(A.size() + 1);
     size_t k = 0;
     for (auto &i : A) {
         i.insert(i.begin(), b[k]);
@@ -41,7 +60,7 @@ void first_table(std::vector<std::vector<double>> &A, std::vector<double> &c, st
     c.insert(c.begin(), 0);
     simplex.push_back(c);
     std::cout << std::setw(20) << "Simplex" << std::endl;
-    print_2(simplex);
+    print_simplex(simplex, sv, basis);
 }
 
 // Разрешающий столбец
@@ -91,13 +110,14 @@ int main() {
     std::cout << std::setw(18) << "b" << std::endl;
     print_1(b);
 
+    // Векторa для хранения базисных и свободных переменных:
+    // изначально свободные переменные - x1, x2, x3
+    std::vector<std::string> sv = {" ", "b", "x1", "x2", "x3"};
+    std::vector<std::string> basis = {"-", "x4", "x5", "x6", "F"};
+
     // Создание и заполенение симплекс таблицы
     std::vector<std::vector<double>> simplex;
-    first_table(A, c, b, simplex);
-
-    // Вектор для хранения базисных и свободных переменных: первые три элемента - свободные, последние три - базисные.
-    // изначально свободные переменные - x1, x2, x3
-    std::vector<double> for_x = {1, 2, 3, 4, 5, 6};
+    first_table(A, c, b, simplex, sv, basis);
 
     size_t k = 1;
     // Проверка оптимальности
@@ -112,7 +132,8 @@ int main() {
         else {
             double element = simplex.at(string_).at(column_);
             // Меняем переменные
-            std::swap(for_x.at(column_ - 1), for_x.at(string_ + 3));
+            std::swap(sv.at(column_ + 1), basis.at(string_ + 1));
+            std::cout << "Swap " << sv.at(column_ + 1) << " <-> " << basis.at(string_ + 1) << std::endl;
 
             // Изменяем таблицу:
             // - элементы разрешающий строки / разрешающий элемент
@@ -131,7 +152,7 @@ int main() {
                 }
             // Вывод полученной симплекс-таблицы
             std::cout << std::setw(20) << "Simplex" << std::endl;
-            print_2(simplex);
+            print_simplex(simplex, sv, basis);
 
             // Подведение итога оптимизации. Если итоговый ответ - оптимальный, выписывается ответ
             if (column(simplex.at(3)) != 10) std::cout << "This is't the optimal solution" << std::endl;
@@ -139,7 +160,7 @@ int main() {
                 std::cout << "This is the optimal solution" << '\n'
                           << '\n';
                 std::cout << "ANSWER: F = " << simplex.at(3).at(0) << " (F = 2x1 + 6x2 + 7x3 -> max). "
-                          << "x" << for_x.at(0) << ", x" << for_x.at(1) << ", x" << for_x.at(2) << " = 0, x" << for_x.at(3) << " = " << simplex.at(0).at(0) << ", x" << for_x.at(4) << " = " << simplex.at(1).at(0) << ", x" << for_x.at(5) << " = " << simplex.at(2).at(0);
+                          << sv[2] << ", " << sv[3] << ", " << sv[4] << " = 0, " << basis[1] << " = " << simplex.at(0).at(0) << ", " << basis[2] << " = " << simplex.at(1).at(0) << ", " << basis[3] << " = " << simplex.at(2).at(0);
             }
             std::cout << std::endl;
 
